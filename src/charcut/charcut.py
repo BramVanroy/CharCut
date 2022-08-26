@@ -413,7 +413,7 @@ def score_all(aligned_segs, styled_ops, alt_norm):
         ]
 
 
-def run_on(aligned_segs, args):
+def run_on(aligned_segs, args = None):
     """
     Main function.
 
@@ -437,12 +437,12 @@ def run_on(aligned_segs, args):
 
     print("\t".join(format_score(doc_cost, doc_div) for doc_cost, doc_div in zip(doc_costs, doc_divs)))
 
-    if getattr(args, "plain_output_file", None):
+    if args and getattr(args, "plain_output_file", None):
         with open(args.plain_output_file, "w") as plain_file:
             for pairs in seg_scores:
                 print("\t".join(format_score(*pair) for pair in pairs), file=plain_file)
 
-    if getattr(args, "html_output_file", None):
+    if args and getattr(args, "html_output_file", None):
         with open(args.html_output_file, "w") as html_file:
             html_dump(html_file, aligned_segs, styled_ops, seg_scores, doc_costs, doc_divs, args)
 
