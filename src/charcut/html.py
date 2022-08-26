@@ -100,7 +100,7 @@ def make_coloured_bullets(basenames):
     return {to_colour: bullet.format(colours[i % len(colours)]) for i, to_colour in enumerate(to_colour)}
 
 
-def html_dump(out_file, aligned_segs, styled_ops, seg_scores, doc_costs, doc_divs, args):
+def html_dump(out_file, aligned_segs, styled_ops, seg_scores, doc_costs, doc_divs, file_pair, src_file):
     """
     Apply highlighting on all segments and output them in HTML.
 
@@ -166,8 +166,8 @@ def html_dump(out_file, aligned_segs, styled_ops, seg_scores, doc_costs, doc_div
   </th>
 </tr>"""
     print(html_top, file=out_file)
-    src_basename = os.path.basename(args.src_file) if args.src_file else ""
-    basename_pairs = [list(map(os.path.basename, pair.split(","))) for pair in args.file_pair]
+    src_basename = os.path.basename(src_file) if src_file else ""
+    basename_pairs = [list(map(os.path.basename, pair.split(","))) for pair in file_pair]
     bullets = make_coloured_bullets(chain(*basename_pairs))
     prev_id = None
     for segs, ops, score_pairs in zip(aligned_segs, styled_ops, seg_scores):

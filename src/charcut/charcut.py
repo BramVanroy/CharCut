@@ -20,11 +20,16 @@
 """CharCut: lightweight character-based MT output highlighting and scoring."""
 
 import difflib
+import gzip
 import math
+import os
 import re
+from argparse import Namespace
 from collections import defaultdict
 from itertools import chain
 from operator import itemgetter
+from tempfile import NamedTemporaryFile
+from typing import List
 
 from charcut.html import html_dump
 
@@ -68,7 +73,7 @@ def iter_common_substrings(seq1, seq2, start_pos1, start_pos2, min_match_size, a
             ok_pos2 = tokens2.get(token)
             if ok_pos2:
                 first_pos = ok_pos1[0]
-                substr = "".join(seq1[first_pos : first_pos + offset + 1])
+                substr = "".join(seq1[first_pos: first_pos + offset + 1])
                 if len(substr) >= min_match_size:
                     yield substr, ok_pos1, ok_pos2
                 elif add_fix and 0 in ok_pos1 and 0 in ok_pos2:  # common prefix
@@ -184,9 +189,9 @@ def clean_match_list(match_list, mask1, mask2):
     """
     for substr, pos1, pos2 in match_list:
         k = len(substr)
-        clean_pos1 = [i for i in pos1 if all(mask1[i : i + k])]
+        clean_pos1 = [i for i in pos1 if all(mask1[i: i + k])]
         if clean_pos1:
-            clean_pos2 = [i for i in pos2 if all(mask2[i : i + k])]
+            clean_pos2 = [i for i in pos2 if all(mask2[i: i + k])]
             if clean_pos2:
                 yield substr, clean_pos1, clean_pos2
 
@@ -237,8 +242,8 @@ def greedy_matching(seq1, seq2, min_match_size):
         retained_matches.append((i, j, substr))
         size = len(substr)
         # Update masks with newly retained characters
-        mask1[i : i + size] = [0] * size
-        mask2[j : j + size] = [0] * size
+        mask1[i: i + size] = [0] * size
+        mask2[j: j + size] = [0] * size
         # Eliminate common substrings for which at least one char is already covered
         match_list = list(clean_match_list(match_list, mask1, mask2))
 
@@ -247,10 +252,10 @@ def greedy_matching(seq1, seq2, min_match_size):
         yield match
     # Output deletions
     for pos, size in residual_diff(mask1):
-        yield pos, -1, seq1[pos : pos + size]
+        yield pos, -1, seq1[pos: pos + size]
     # Output insertions
     for pos, size in residual_diff(mask2):
-        yield -1, pos, seq2[pos : pos + size]
+        yield -1, pos, seq2[pos: pos + size]
 
 
 def find_regular_matches(ops):
@@ -266,7 +271,7 @@ def find_regular_matches(ops):
     char_matches1 = [(m, i) for m in matches1 for i in range(len(m[2]))]
     char_matches2 = [(m, i) for m in matches2 for i in range(len(m[2]))]
     sm = difflib.SequenceMatcher(None, char_matches1, char_matches2, autojunk=False)
-    return {m for a, _, size in sm.get_matching_blocks() for m, _ in char_matches1[a : a + size]}
+    return {m for a, _, size in sm.get_matching_blocks() for m, _ in char_matches1[a: a + size]}
 
 
 def eval_shift_distance(shift, reg_matches):
@@ -413,7 +418,8 @@ def score_all(aligned_segs, styled_ops, alt_norm):
         ]
 
 
-def run_on(aligned_segs, args = None):
+def run_on(aligned_segs, file_pair, html_output_file=None, plain_output_file=None, src_file=None,
+           match_size: int = 3, alt_norm: bool = False):
     """
     Main function.
 
@@ -425,11 +431,11 @@ def run_on(aligned_segs, args = None):
     """
 
     styled_ops = [
-        [compare_segments(cand, ref, args.match_size) for cand, ref in cand_refs]
+        [compare_segments(cand, ref, match_size) for cand, ref in cand_refs]
         for seg_id, _, _, cand_refs in aligned_segs
     ]
 
-    seg_scores = list(score_all(aligned_segs, styled_ops, args.alt_norm))
+    seg_scores = list(score_all(aligned_segs, styled_ops, alt_norm))
     pair_scores = list(zip(*seg_scores))
 
     doc_costs = [sum(cost for cost, _ in pairs) for pairs in pair_scores]
@@ -437,14 +443,14 @@ def run_on(aligned_segs, args = None):
 
     print("\t".join(format_score(doc_cost, doc_div) for doc_cost, doc_div in zip(doc_costs, doc_divs)))
 
-    if args and getattr(args, "plain_output_file", None):
-        with open(args.plain_output_file, "w") as plain_file:
+    if plain_output_file:
+        with open(plain_output_file, "w") as plain_file:
             for pairs in seg_scores:
                 print("\t".join(format_score(*pair) for pair in pairs), file=plain_file)
 
-    if args and getattr(args, "html_output_file", None):
-        with open(args.html_output_file, "w") as html_file:
-            html_dump(html_file, aligned_segs, styled_ops, seg_scores, doc_costs, doc_divs, args)
+    if html_output_file:
+        with open(html_output_file, "w") as html_file:
+            html_dump(html_file, aligned_segs, styled_ops, seg_scores, doc_costs, doc_divs, file_pair, src_file)
 
     return (1.0 * doc_costs[0] / doc_divs[0]) if doc_divs[0] else 0.0, len(aligned_segs)
 
@@ -452,3 +458,76 @@ def run_on(aligned_segs, args = None):
 def format_score(cost, div):
     score = (1.0 * cost / div) if div else 0.0
     return "{:.4f} ({}/{})".format(score, cost, div)
+
+
+def create_tmp_files(hyps: List[str], refs: List[str]):
+    with NamedTemporaryFile(delete=False, mode="w", encoding="utf-8") as fhhyps:
+        fhhyps.write("\n".join(hyps) + "\n")
+    hypsfname = fhhyps.name
+
+    with NamedTemporaryFile(delete=False, mode="w", encoding="utf-8") as fhrefs:
+        fhrefs.write("\n".join(refs) + "\n")
+    refsname = fhrefs.name
+
+    return hypsfname, refsname
+
+
+def read_gz8(filename):
+    """Read a utf8, possibly gzipped, file into memory, as a list of lines."""
+    opener = gzip.open if filename.endswith(".gz") else open
+    with opener(filename, "rb") as f:
+        return [line.decode("u8") for line in f]
+
+
+def load_input_files(file_pair, src_file):
+    """
+    Load input files specified in the CL arguments into memory.
+
+    Returns a list of 4-tuples: (segment_id, origin, src_segment,
+                                 [(candidate_segment, reference_segment), ...])
+    "origin" is always None (present for compatibility with other modules handling sdlxliff files).
+    "src_segment" is None if the source file was not passed on the CL.
+    There is one (candidate_segment, reference_segment) for each positional argument on the command line.
+    """
+    cand_ref_file_pairs = [pair.split(",") for pair in file_pair]
+    cand_ref_zips = [list(map(read_gz8, file_pair)) for file_pair in cand_ref_file_pairs]
+    # src file is optional
+    src_segs = read_gz8(src_file) if src_file else [None] * len(cand_ref_zips[0][0])
+    for cand_segs, ref_segs in cand_ref_zips:
+        assert len(src_segs) == len(cand_segs) == len(ref_segs)
+    # Transpose lists
+    cand_ref_segs = list(zip(*[list(zip(*cand_ref)) for cand_ref in cand_ref_zips]))
+    return [
+        (i, None, src.strip() if src else src, [(cand.strip(), ref.strip()) for cand, ref in cand_refs])
+        for i, (src, cand_refs) in enumerate(zip(src_segs, cand_ref_segs), 1)
+    ]
+
+
+def delete_files(*files: str):
+    for f in files:
+        os.unlink(f)
+
+
+def calculate_charcut(hyps, refs, html_output_file=None, plain_output_file=None, src_file=None, match_size: int = 3,
+                      alt_norm: bool = False):
+    if isinstance(hyps, str):
+        hyps = [hyps]
+
+    if isinstance(refs, str):
+        refs = [refs]
+    print(refs)
+    file_pair = create_tmp_files(hyps=hyps, refs=refs)
+    file_pair_str = ",".join(file_pair)
+    args = {"alt_norm": alt_norm,
+            "match_size": match_size,
+            "html_output_file": html_output_file,
+            "plain_output_file": plain_output_file,
+            "file_pair": [file_pair_str],
+            "src_file": src_file}
+
+    aligned_segs = load_input_files([file_pair_str], src_file)
+    print(aligned_segs)
+    ccut = run_on(aligned_segs, **args)
+    delete_files(*file_pair)
+
+    return ccut
