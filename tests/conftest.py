@@ -14,6 +14,7 @@ def example_estimate():
             "ref": "this is actually an estimate",
             "charcut": 0.16363636363636364}
 
+
 @fixture
 def example_corpus():
     return {"hyp": ["this week the saudis denied information published in the new york times", "this is in fact an estimate"],
