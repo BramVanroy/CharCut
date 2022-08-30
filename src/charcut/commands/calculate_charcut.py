@@ -1,5 +1,4 @@
 import argparse
-import gzip
 
 from charcut.charcut import run_on, load_input_files
 
