@@ -1,6 +1,6 @@
 import argparse
 
-from charcut.charcut import run_on, load_input_files
+from charcut.charcut import calculate_charcut_file_pairs
 
 
 def make_base_parser():
@@ -9,11 +9,9 @@ def make_base_parser():
         description="""Character-based difference
         highlighting and scoring, based on loose differences. By default, just print the document-level
         score on stdout (0~1, lower is better).""",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
-        "-m", "--match-size", type=int, default=3, help="min match size in characters"
-    )
+    parser.add_argument("-m", "--match-size", type=int, default=3, help="min match size in characters")
     parser.add_argument(
         "-n",
         "--alt-norm",
@@ -48,8 +46,7 @@ def main():
     args = vars(parse_args())
     file_pair = args.pop("file_pair")
     src_file = args.pop("src_file")
-    aligned_segs = load_input_files(file_pair, src_file)
-    run_on(aligned_segs, file_pair, src_file=src_file, **args)
+    return calculate_charcut_file_pairs(file_pair, src_file, **args)
 
 
 if __name__ == "__main__":
