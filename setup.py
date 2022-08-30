@@ -2,7 +2,7 @@ from pathlib import Path
 from setuptools import find_packages, setup
 
 
-extras = {"dev": ["isort>=5.5.4", "black", "flake8", "pytest", "pygments"]}
+extras = {"dev": ["isort>=5.5.4", "black", "flake8", "pytest"]}
 
 setup(
     name="charcut",
