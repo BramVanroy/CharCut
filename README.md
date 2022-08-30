@@ -10,30 +10,55 @@ Accidentally, the scores inferred from those differences correlate very well wit
 
 It is intended to be lightweight and easy to use, so the HTML outputs are, and will be kept, slick on purpose.
 
-## Usage
+Note (Bram Vanroy): the remainder of this README has been changed to reflect the changes I have made to make the package more usable from a Python package perspective,
+e.g., by using hypotheses/references directly without files. 
 
-CharCut is written in Python 3. It only relies on the standard library.
+## Installation
+
+```shell
+pip install charcut
+```
+
+This will install the command `calculate-charcut`.
+
 
 Basic usage:
-```
-python3 charcut.py cand.txt,ref.txt
+```shell
+calculate-charcut cand.txt,ref.txt
 ```
 where `cand.txt` and `ref.txt` contain corresponding candidate (MT) and reference (human) segments, 1 per line. Multiple file pairs can be specified on the command line: candidates with references, candidates with other candidates, etc.
-By default, only document-level scores are displayed on standard output. To produce a HTML output file, use the `-o` option:
-```
-python3 charcut.py cand.txt,ref.txt -o mydiff.html
+By default, only document-level scores are displayed on standard output. To produce an HTML output file, use the `-o` option:
+
+```shell
+calculate-charcut cand.txt,ref.txt -o mydiff.html
 ```
 
 A few more options are available; call
-```
-python3 charcut.py -h
+```shell
+calculate-charcut -h
 ```
 to list them.
 
 Consider lowering the `-m` option value (minimum match size) for non-alphabetical writing systems such as Chinese or Japanese. The default value (3 characters) should be acceptable for most European languages, but depending on the language and data, larger values might produce better looking results.
 
-## Changes
-09/07/2019
-* ported code to Python3
-* added support for comparing multiple file pairs simultaneously
-* removed "-c" and "-r" command line arguments, replaced with a space-separated list of (comma-separated) file pairs
+## Modifications by Bram Vanroy
+
+Bram Vanroy made some changes to this package that do not affect the result of the metric but that should improve usability. He also packaged the library for pip and added some tests to ensure the same results with the original library. Code has been rewritten to make it easier to use from within Python without the need of files as input. In Python, the following entry point now exists:
+
+```python
+def calculate_charcut(
+    hyps: Union[str, List[str]],
+    refs: Union[str, List[str]],
+    html_output_file: str = None,
+    plain_output_file: str = None,
+    src_file: str = None,
+    match_size: int = 3,
+    alt_norm: bool = False,
+) -> Tuple[float, int]:
+```
+
+where `hyps` and `refs` are indiviual sentences `str` or a list of sentences `List[str]`. This function has the same capabilities and arguments as the command-line script that is available (discussed above). This command line script is now available as an installed entry point rather than a separate Python script. You can call that from the command line with `calculate-charcut`.
+
+## License
+
+[GPLv3](LICENSE)
