@@ -9,7 +9,7 @@ from collections import defaultdict
 from itertools import chain
 from operator import itemgetter
 from tempfile import NamedTemporaryFile
-from typing import List, Union
+from typing import List, Union, Tuple
 
 from charcut.html import html_dump
 
@@ -502,7 +502,19 @@ def calculate_charcut(
     src_file: str = None,
     match_size: int = 3,
     alt_norm: bool = False,
-):
+) -> Tuple[float, int]:
+    """Main Python entry point for calculate charcut. Returns the character score (0-1; lower is better) and the
+    number of segments that were used to calculate the value
+
+    :param hyps: sentence or list of sentences as hypothesis
+    :param refs: sentence or list of sentences as reference
+    :param html_output_file: generate a html file with per-segment scores and highlighting
+    :param plain_output_file: generate a plain text file with per-segment scores only
+    :param src_file: source file, only used for display
+    :param match_size: min match size in characters
+    :param alt_norm: alternative normalization scheme: use only the candidate's length for normalization
+    :return: a tuple containing the charcut score and the number of segments that were used to calculate the value
+    """
     if isinstance(hyps, str):
         hyps = [hyps]
 
@@ -529,6 +541,13 @@ def calculate_charcut(
 
 
 def calculate_charcut_file_pairs(file_pair: Union[str, List[str]], src_file=None, **kwargs):
+    """Calculate charcut as originally on a given file_pair (str of comma-separated files) or list of such file pairs.
+    :param file_pair: a comma-separated value of a file pair (one file with hypotheses, other file with references) or
+    multiple such file pairs
+    :param src_file: source file, only used for display
+    :param kwargs: kwargs, see `calculate_charcut`
+    :return: a tuple containing the charcut score and the number of segments that were used to calculate the value
+    """
     if isinstance(file_pair, str):
         file_pair = [file_pair]
 
