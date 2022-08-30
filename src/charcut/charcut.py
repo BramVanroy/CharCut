@@ -9,7 +9,7 @@ from collections import defaultdict
 from itertools import chain
 from operator import itemgetter
 from tempfile import NamedTemporaryFile
-from typing import List, Union, Tuple
+from typing import List, Tuple, Union
 
 from charcut.html import html_dump
 

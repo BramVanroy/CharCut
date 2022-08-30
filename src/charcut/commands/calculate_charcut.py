@@ -6,9 +6,8 @@ from charcut.charcut import calculate_charcut_file_pairs
 def make_base_parser():
     """Initiates a CL parser with base arguments used by standalone program and other calling modules"""
     parser = argparse.ArgumentParser(
-        description="""Character-based difference
-        highlighting and scoring, based on loose differences. By default, just print the document-level
-        score on stdout (0~1, lower is better).""",
+        description="Character-based difference highlighting and scoring, based on loose differences. By default,"
+        " just print the document-level score on stdout (0-1, lower is better).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("-m", "--match-size", type=int, default=3, help="min match size in characters")
