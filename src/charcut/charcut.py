@@ -495,8 +495,8 @@ def delete_files(*files: str):
 
 
 def calculate_charcut(
-    hyps,
-    refs,
+    hyps: Union[str, List[str]],
+    refs: Union[str, List[str]],
     html_output_file: str = None,
     plain_output_file: str = None,
     src_file: str = None,
