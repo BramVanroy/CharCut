@@ -620,4 +620,4 @@ copy of the Program in return for a fee.
 
 CharCut Copyright (C) 2017,2019 Lardilleux; https://github.com/alardill/CharCut (original implementation)
 CharCut Copyright (C) 2022 Bram Vanroy; https://github.com/BramVanroy/CharCut (pip-installable, packaging,
- pip-distribution)
+refactoring for usability, pip-distribution)
