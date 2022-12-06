@@ -406,6 +406,7 @@ def run_on(
     src_file=None,
     match_size: int = 3,
     alt_norm: bool = False,
+    verbose: bool = False,
 ):
     """Main function.
 
@@ -427,7 +428,8 @@ def run_on(
     doc_costs = [sum(cost for cost, _ in pairs) for pairs in pair_scores]
     doc_divs = [sum(div for _, div in pairs) for pairs in pair_scores]
 
-    print("\t".join(format_score(doc_cost, doc_div) for doc_cost, doc_div in zip(doc_costs, doc_divs)))
+    if verbose:
+        print("\t".join(format_score(doc_cost, doc_div) for doc_cost, doc_div in zip(doc_costs, doc_divs)))
 
     if plain_output_file:
         with open(plain_output_file, "w", encoding="utf-8") as plain_file:
@@ -502,6 +504,7 @@ def calculate_charcut(
     src_file: str = None,
     match_size: int = 3,
     alt_norm: bool = False,
+    verbose: bool = False,
 ) -> Tuple[float, int]:
     """Main Python entry point for calculate charcut. Returns the character score (0-1; lower is better) and the
     number of segments that were used to calculate the value
@@ -513,6 +516,7 @@ def calculate_charcut(
     :param src_file: source file, only used for display
     :param match_size: min match size in characters
     :param alt_norm: alternative normalization scheme: use only the candidate's length for normalization
+    :param verbose: whether to print the CharCut score to stdout
     :return: a tuple containing the charcut score and the number of segments that were used to calculate the value
     """
     if isinstance(hyps, str):
@@ -530,6 +534,7 @@ def calculate_charcut(
         "plain_output_file": plain_output_file,
         "file_pair": [file_pair_str],
         "src_file": src_file,
+        "verbose": verbose,
     }
 
     aligned_segs = load_input_files([file_pair_str], src_file)
