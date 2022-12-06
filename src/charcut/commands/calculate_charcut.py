@@ -45,7 +45,7 @@ def main():
     args = vars(parse_args())
     file_pair = args.pop("file_pair")
     src_file = args.pop("src_file")
-    return calculate_charcut_file_pairs(file_pair, src_file, **args)
+    return calculate_charcut_file_pairs(file_pair, src_file, verbose=True, **args)
 
 
 if __name__ == "__main__":
