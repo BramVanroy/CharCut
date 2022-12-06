@@ -54,6 +54,7 @@ def calculate_charcut(
     src_file: str = None,
     match_size: int = 3,
     alt_norm: bool = False,
+    verbose: bool = False
 ) -> Tuple[float, int]:
 ```
 
